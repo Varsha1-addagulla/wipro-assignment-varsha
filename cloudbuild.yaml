@@ -1,19 +1,28 @@
-# Cloud Build → Artifact Registry → Cloud Run.
+# Cloud Build → Artifact Registry → Cloud Run
 #
-# Build identity: serviceAccount must be a literal resource name (no $_ vars here).
-# Trigger: set "Service account" to the same SA in the UI, or rely on this field.
-# Trigger: set "Directory" to wipro if the repo root is above this folder.
+# GCP project (this repo / trigger target):
+#   Name:   My First Project
+#   Number: 278595266473
+#   ID:     project-c578a9e8-e300-4241-b6d
 #
-# Cloud Run revision identity: --service-account uses _COMPUTE_SA_EMAIL (same default compute SA).
+# IAM (run once in Cloud Shell if builds show "Logs Writer" errors):
+#   gcloud projects add-iam-policy-binding project-c578a9e8-e300-4241-b6d \
+#     --member="serviceAccount:278595266473-compute@developer.gserviceaccount.com" \
+#     --role="roles/logging.logWriter"
+#
+# Build identity: serviceAccount must be a literal resource name (no $_ vars in this field).
+# Trigger: set "Service account" to 278595266473-compute@developer.gserviceaccount.com
+#
+# Deploy omits --service-account so Cloud Run uses the default runtime identity
+# (Compute Engine default SA in this project).
 
 substitutions:
+  _GCP_PROJECT_ID: project-c578a9e8-e300-4241-b6d
   _REGION: us-central1
   _AR_REPOSITORY: app
   _SERVICE_NAME: loan-risk-multiagent
-  _COMPUTE_SA_EMAIL: 278595266473-compute@developer.gserviceaccount.com
 
-# All steps run as this principal (push images, deploy Cloud Run).
-serviceAccount: projects/$PROJECT_ID/serviceAccounts/278595266473-compute@developer.gserviceaccount.com
+serviceAccount: projects/project-c578a9e8-e300-4241-b6d/serviceAccounts/278595266473-compute@developer.gserviceaccount.com
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -23,20 +32,20 @@ steps:
     args:
       - build
       - -t
-      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
+      - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
       - -t
-      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest
+      - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest
       - .
 
   - name: gcr.io/cloud-builders/docker
     args:
       - push
-      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
+      - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
 
   - name: gcr.io/cloud-builders/docker
     args:
       - push
-      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest
+      - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
@@ -45,19 +54,18 @@ steps:
       - deploy
       - $_SERVICE_NAME
       - --image
-      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
+      - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
       - --region
       - $_REGION
       - --platform
       - managed
-      - --service-account
-      - $_COMPUTE_SA_EMAIL
       - --min-instances
       - "1"
       - --max-instances
       - "10"
       - --allow-unauthenticated
+      - --quiet
 
 images:
-  - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
-  - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest
+  - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
+  - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest
