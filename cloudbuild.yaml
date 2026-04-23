@@ -55,16 +55,29 @@ steps:
       - $_SERVICE_NAME
       - --image
       - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
+      - --project
+      - $_GCP_PROJECT_ID
       - --region
       - $_REGION
       - --platform
       - managed
+      - --port
+      - "8080"
+      - --memory
+      - "1Gi"
+      - --cpu
+      - "1"
+      - --timeout
+      - "300"
+      - --concurrency
+      - "40"
       - --min-instances
       - "1"
       - --max-instances
       - "10"
       - --allow-unauthenticated
       - --quiet
+      - --verbosity=info
 
 images:
   - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
