@@ -65,6 +65,7 @@ def test_run_assessment_returns_all_keys(mocked_llm: None) -> None:
     result = run_assessment(_applicant())
 
     expected_keys = {
+        "intake",
         "planner",
         "consistency_checker",
         "credit_analyst",
@@ -74,10 +75,14 @@ def test_run_assessment_returns_all_keys(mocked_llm: None) -> None:
         "employment_verifier",
         "debt_analyzer",
         "critic",
+        "negotiation",
         "report",
     }
     assert expected_keys.issubset(result.keys())
     assert result["planner"]["strategy"] == "full_assessment"
+    assert result["intake"]["agent"] == "Intake"
+    assert len(result["intake"]["tools_invoked"]) == 4
+    assert "applicable" in result["negotiation"]
     assert result["critic"]["decision"] in {
         "APPROVED",
         "HUMAN_REVIEW",

@@ -3,6 +3,9 @@
 Topology (see ARCHITECTURE for full discussion):
 
     START
+      -> intake                           (pure-logic tool-use agent:
+                                           credit bureau, velocity check,
+                                           OFAC SDN, bank-statement signal)
       -> planner                          (pure-logic strategy selector)
       -> consistency_checker              (pure-logic data-integrity gate)
       -> [conditional routing]
@@ -13,6 +16,9 @@ Topology (see ARCHITECTURE for full discussion):
                    fraud_detector, employment_verifier]   (parallel LLMs)
                -> debt_analyzer                           (LLM synthesis)
                -> critic
+      -> negotiator                       (pure-logic counter-offer proposer;
+                                           only emits structured offers when
+                                           decision != APPROVED)
       -> report                           (LLM narrative)
       -> END
 
@@ -39,6 +45,8 @@ from agents.debt_analyzer import analyze_debt
 from agents.employment_verifier import verify_employment
 from agents.fraud_detector import detect_fraud
 from agents.income_verifier import verify_income
+from agents.intake_agent import enrich_applicant
+from agents.negotiator_agent import propose_counter_offer
 from agents.planner_agent import plan_assessment
 from agents.report_writer import write_report
 from agents.response_schemas import coerce_analyst_response
@@ -57,6 +65,7 @@ class AssessmentState(TypedDict, total=False):
     """
 
     applicant: dict[str, Any]
+    intake: dict[str, Any]
     planner: dict[str, Any]
     consistency_checker: dict[str, Any]
     credit_analyst: dict[str, Any]
@@ -66,6 +75,7 @@ class AssessmentState(TypedDict, total=False):
     employment_verifier: dict[str, Any]
     debt_analyzer: dict[str, Any]
     critic: dict[str, Any]
+    negotiation: dict[str, Any]
     report: dict[str, Any]
 
 
@@ -141,12 +151,19 @@ _CRITIC_STATE_KEYS: tuple[str, ...] = (
     "debt_analyzer",
 )
 
-_REPORT_STATE_KEYS: tuple[str, ...] = (*_CRITIC_STATE_KEYS, "critic", "planner")
+_REPORT_STATE_KEYS: tuple[str, ...] = (
+    *_CRITIC_STATE_KEYS,
+    "critic",
+    "planner",
+    "intake",
+    "negotiation",
+)
 
 # LangGraph treats TypedDict field names and node names as a single channel
 # namespace, so node identifiers must not collide with state keys. Nodes get
 # a ``_node`` suffix while the state keys (and therefore the /assess response
 # shape consumed by the frontend) stay unchanged.
+_NODE_INTAKE = "intake_node"
 _NODE_PLANNER = "planner_node"
 _NODE_CONSISTENCY = "consistency_node"
 _NODE_CREDIT = "credit_node"
@@ -156,6 +173,7 @@ _NODE_FRAUD = "fraud_node"
 _NODE_EMPLOYMENT = "employment_node"
 _NODE_DEBT = "debt_node"
 _NODE_CRITIC = "critic_node"
+_NODE_NEGOTIATOR = "negotiator_node"
 _NODE_REPORT = "report_node"
 
 _PARALLEL_NODE_NAMES: tuple[str, ...] = (
@@ -168,6 +186,10 @@ _PARALLEL_NODE_NAMES: tuple[str, ...] = (
 
 
 # --- Nodes -------------------------------------------------------------------
+
+
+def intake_node(state: AssessmentState) -> dict[str, Any]:
+    return {"intake": enrich_applicant(state["applicant"])}
 
 
 def planner_node(state: AssessmentState) -> dict[str, Any]:
@@ -238,6 +260,14 @@ def critic_node(state: AssessmentState) -> dict[str, Any]:
     return {"critic": make_decision(results)}
 
 
+def negotiator_node(state: AssessmentState) -> dict[str, Any]:
+    return {
+        "negotiation": propose_counter_offer(
+            state["applicant"], state.get("critic", {})
+        )
+    }
+
+
 def report_node(state: AssessmentState) -> dict[str, Any]:
     results = {key: state.get(key, {}) for key in _REPORT_STATE_KEYS}
     return {
@@ -281,6 +311,7 @@ def _route_after_consistency(state: AssessmentState) -> list[str]:
 def _build_graph() -> Any:
     graph = StateGraph(AssessmentState)
 
+    graph.add_node(_NODE_INTAKE, intake_node)
     graph.add_node(_NODE_PLANNER, planner_node)
     graph.add_node(_NODE_CONSISTENCY, consistency_node)
     graph.add_node(_NODE_CREDIT, credit_node)
@@ -290,9 +321,11 @@ def _build_graph() -> Any:
     graph.add_node(_NODE_EMPLOYMENT, employment_node)
     graph.add_node(_NODE_DEBT, debt_node)
     graph.add_node(_NODE_CRITIC, critic_node)
+    graph.add_node(_NODE_NEGOTIATOR, negotiator_node)
     graph.add_node(_NODE_REPORT, report_node)
 
-    graph.add_edge(START, _NODE_PLANNER)
+    graph.add_edge(START, _NODE_INTAKE)
+    graph.add_edge(_NODE_INTAKE, _NODE_PLANNER)
     graph.add_edge(_NODE_PLANNER, _NODE_CONSISTENCY)
 
     graph.add_conditional_edges(
@@ -305,7 +338,8 @@ def _build_graph() -> Any:
         graph.add_edge(name, _NODE_DEBT)
 
     graph.add_edge(_NODE_DEBT, _NODE_CRITIC)
-    graph.add_edge(_NODE_CRITIC, _NODE_REPORT)
+    graph.add_edge(_NODE_CRITIC, _NODE_NEGOTIATOR)
+    graph.add_edge(_NODE_NEGOTIATOR, _NODE_REPORT)
     graph.add_edge(_NODE_REPORT, END)
 
     return graph.compile()
@@ -321,6 +355,7 @@ def run_assessment(applicant: dict[str, Any]) -> dict[str, Any]:
 
     final_state: AssessmentState = GRAPH.invoke({"applicant": applicant})
     return {
+        "intake": final_state.get("intake", {}),
         "planner": final_state.get("planner", {}),
         "consistency_checker": final_state.get("consistency_checker", {}),
         "credit_analyst": final_state.get("credit_analyst", {}),
@@ -330,5 +365,6 @@ def run_assessment(applicant: dict[str, Any]) -> dict[str, Any]:
         "employment_verifier": final_state.get("employment_verifier", {}),
         "debt_analyzer": final_state.get("debt_analyzer", {}),
         "critic": final_state.get("critic", {}),
+        "negotiation": final_state.get("negotiation", {}),
         "report": final_state.get("report", {}),
     }

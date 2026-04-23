@@ -1149,6 +1149,118 @@
       border-radius: 9999px;
     }
 
+    /* ─── INTAKE / EXTERNAL DATA CARD ─── */
+    .intake-card {
+      margin: 0 0 1rem 0;
+      padding: 1rem 1.1rem;
+      background: rgba(15, 23, 42, .55);
+      border: 1px solid rgba(148, 163, 184, .18);
+      border-radius: 12px;
+    }
+    .intake-card .intake-head {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .65rem;
+    }
+    .intake-card .intake-head .intake-label {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #93c5fd;
+    }
+    .intake-card .intake-head h3 {
+      font-size: .92rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin: 0;
+    }
+    .intake-card .intake-head .tool-pill {
+      font-size: .62rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      background: rgba(99, 102, 241, .12);
+      border: 1px solid rgba(99, 102, 241, .22);
+      padding: .1rem .45rem;
+      border-radius: 9999px;
+    }
+    .intake-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: .6rem;
+      margin-top: .5rem;
+    }
+    .intake-item {
+      padding: .55rem .7rem;
+      background: rgba(148, 163, 184, .06);
+      border: 1px solid rgba(148, 163, 184, .14);
+      border-radius: 8px;
+    }
+    .intake-item .k {
+      display: block;
+      font-size: .6rem;
+      color: var(--muted-light);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: .2rem;
+    }
+    .intake-item .v {
+      font-size: .8rem;
+      color: #e2e8f0;
+      font-variant-numeric: tabular-nums;
+    }
+    .intake-item.risk-high .v { color: #fca5a5; }
+    .intake-item.risk-elevated .v { color: #fde68a; }
+
+    /* ─── NEGOTIATOR COUNTER-OFFER CARD ─── */
+    .negotiation-card {
+      margin: 0 0 1rem 0;
+      padding: 1rem 1.1rem;
+      background: rgba(16, 185, 129, .08);
+      border: 1px solid rgba(16, 185, 129, .25);
+      border-radius: 12px;
+    }
+    .negotiation-card.not-qualified {
+      background: rgba(250, 204, 21, .08);
+      border-color: rgba(250, 204, 21, .25);
+    }
+    .negotiation-card .neg-head {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .6rem;
+    }
+    .negotiation-card .neg-head .neg-label {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #6ee7b7;
+    }
+    .negotiation-card.not-qualified .neg-head .neg-label { color: #fde68a; }
+    .negotiation-card .neg-head h3 {
+      font-size: .95rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin: 0;
+    }
+    .negotiation-card .neg-message {
+      font-size: .82rem;
+      color: #e2e8f0;
+      line-height: 1.5;
+      margin: 0 0 .55rem 0;
+    }
+    .negotiation-card .neg-meta {
+      font-size: .72rem;
+      color: var(--muted-light);
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .negotiation-card .neg-meta .mk { color: #9ca3af; margin-right: .3rem; }
+
     /* ─── TRACE FOOTER ─── */
     .trace-footer {
       margin-top: 1rem;
@@ -1295,7 +1407,7 @@
           <div class="step-dot">4</div>
           <div class="step-info">
             <strong>Decision Engine</strong>
-            <span>Rules-based verdict against Fannie Mae thresholds</span>
+            <span>Rules-based verdict against industry-standard underwriting bands</span>
           </div>
         </div>
         <div class="step-row">
@@ -1353,7 +1465,7 @@
         </svg>
       </div>
       <h2>AI-Powered Loan Risk Assessment</h2>
-      <p>Complete the application form and our 7-agent AI pipeline will evaluate the applicant against Fannie Mae underwriting guidelines in seconds.</p>
+      <p>Complete the application form and our multi-agent AI pipeline will evaluate the applicant against industry-standard personal-loan underwriting bands in seconds.</p>
     </div>
 
     <!-- Results -->
@@ -1364,6 +1476,12 @@
 
       <!-- Execution plan (Planner agent) -->
       <div id="plannerStrip"></div>
+
+      <!-- Counter-offer (Negotiator agent; only when not approved) -->
+      <div id="negotiationCard"></div>
+
+      <!-- External data enrichment (Intake agent / tool use) -->
+      <div id="intakeCard"></div>
 
       <!-- Data validation -->
       <div id="consistencyResult"></div>
@@ -1543,7 +1661,7 @@
     const dec = c.decision || 'AUTO_REJECTED';
     const avg = parseFloat(c.average_confidence || 0).toFixed(1);
     const cfg = {
-      APPROVED:      { icon:'✓', label:'Application Approved',         sub:'Meets all Fannie Mae underwriting thresholds.' },
+      APPROVED:      { icon:'✓', label:'Application Approved',         sub:'Meets all underwriting thresholds.' },
       HUMAN_REVIEW:  { icon:'⚡', label:'Flagged for Manual Review',    sub:'One or more factors require a loan officer review.' },
       AUTO_REJECTED: { icon:'✕', label:'Application Not Approved',     sub:'Does not meet minimum underwriting requirements.' },
     };
@@ -1591,6 +1709,100 @@
           <div class="decision-avg-num">${avg}%</div>
           <div class="decision-avg-label">Confidence</div>
         </div>
+      </div>`;
+  }
+
+  /* ── Build intake / external-data card ── */
+  function buildIntake(i) {
+    if (!i || !i.credit_report) return '';
+    const cr = i.credit_report || {};
+    const v  = i.velocity_check || {};
+    const ofac = i.sanctions_screening || {};
+    const cf = i.cash_flow_signal || {};
+    const tools = (i.tools_invoked || [])
+      .map(t => `<span class="tool-pill">${esc(t)}</span>`).join('');
+    const velocityCls = v.stacking_risk === 'high' ? 'risk-high'
+                      : v.stacking_risk === 'elevated' ? 'risk-elevated' : '';
+    return `
+      <div class="intake-card">
+        <div class="intake-head">
+          <span class="intake-label">Intake · External Data</span>
+          <h3>${esc(cr.bureau || 'Bureau')} bureau pull · velocity · OFAC · cash-flow</h3>
+          ${tools}
+        </div>
+        <div class="intake-grid">
+          <div class="intake-item">
+            <span class="k">FICO Tier</span>
+            <span class="v">${esc(cr.fico_tier || '')} (${cr.fico_reported || ''})</span>
+          </div>
+          <div class="intake-item">
+            <span class="k">Tradelines</span>
+            <span class="v">${cr.tradelines_total || 0} · oldest ${cr.oldest_account_months || 0} mo</span>
+          </div>
+          <div class="intake-item">
+            <span class="k">Revolving Utilisation</span>
+            <span class="v">${cr.revolving_utilisation_pct || 0}%</span>
+          </div>
+          <div class="intake-item">
+            <span class="k">Delinquencies (24m)</span>
+            <span class="v">${cr.delinquencies_24m || 0}</span>
+          </div>
+          <div class="intake-item ${velocityCls}">
+            <span class="k">Inquiry Velocity</span>
+            <span class="v">${v.hard_inquiries_30d || 0} in 30d · ${esc(v.stacking_risk || 'normal')}</span>
+          </div>
+          <div class="intake-item">
+            <span class="k">OFAC SDN</span>
+            <span class="v">${ofac.match ? 'HIT' : 'clear'}</span>
+          </div>
+          <div class="intake-item">
+            <span class="k">Cash-flow Stability</span>
+            <span class="v">${cf.cash_flow_stability_index || 0}/100</span>
+          </div>
+          <div class="intake-item">
+            <span class="k">Overdrafts (90d)</span>
+            <span class="v">${cf.overdrafts_90d || 0} · NSF ${cf.nsf_incidents_90d || 0}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Build negotiator counter-offer card ── */
+  function buildNegotiation(n) {
+    if (!n || n.applicable === false) return '';
+    const primary = n.primary_counter;
+    if (!primary && !(n.counter_offers && n.counter_offers.length)) return '';
+    const qualifies = !!n.would_approve_under_counter;
+    const cls = qualifies ? '' : 'not-qualified';
+    const title = qualifies ? 'Counter-Offer Would Qualify' : 'Counter-Offer Suggested';
+    const offer = primary || (n.counter_offers && n.counter_offers[0]) || {};
+    const meta = [];
+    if (n.inputs_considered) {
+      const ic = n.inputs_considered;
+      if (ic.current_lti_multiple !== undefined) {
+        meta.push(`<span><span class="mk">current LTI</span>${ic.current_lti_multiple}x</span>`);
+      }
+      if (ic.current_dti_pct !== undefined) {
+        meta.push(`<span><span class="mk">current DTI</span>${ic.current_dti_pct}%</span>`);
+      }
+    }
+    if (offer.counter_loan_amount) {
+      meta.push(`<span><span class="mk">counter loan</span>$${Number(offer.counter_loan_amount).toLocaleString()}</span>`);
+    }
+    if (offer.new_lti_multiple !== undefined) {
+      meta.push(`<span><span class="mk">new LTI</span>${offer.new_lti_multiple}x</span>`);
+    }
+    if (offer.new_dti_pct !== undefined) {
+      meta.push(`<span><span class="mk">new DTI</span>${offer.new_dti_pct}%</span>`);
+    }
+    return `
+      <div class="negotiation-card ${cls}">
+        <div class="neg-head">
+          <span class="neg-label">Negotiator</span>
+          <h3>${esc(title)}</h3>
+        </div>
+        <p class="neg-message">${esc(offer.message || n.message || '')}</p>
+        ${meta.length ? `<div class="neg-meta">${meta.join('')}</div>` : ''}
       </div>`;
   }
 
@@ -1663,6 +1875,14 @@
       /* Planner strategy strip */
       document.getElementById('plannerStrip').innerHTML = res.planner
         ? buildPlanner(res.planner) : '';
+
+      /* Negotiator counter-offer (only rendered when applicable) */
+      document.getElementById('negotiationCard').innerHTML = res.negotiation
+        ? buildNegotiation(res.negotiation) : '';
+
+      /* Intake / external data enrichment */
+      document.getElementById('intakeCard').innerHTML = res.intake
+        ? buildIntake(res.intake) : '';
 
       /* Consistency */
       document.getElementById('consistencyResult').innerHTML = res.consistency_checker
