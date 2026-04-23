@@ -11,12 +11,20 @@ Hard overrides (checked first):
   fraud_detector confidence < 25 → AUTO_REJECTED
 """
 
-AGENT_KEYS = ["credit_analyst", "income_verifier", "risk_assessor", "fraud_detector", "debt_analyzer"]
+AGENT_KEYS = [
+    "credit_analyst",
+    "income_verifier",
+    "risk_assessor",
+    "fraud_detector",
+    "employment_verifier",
+    "debt_analyzer",
+]
 AGENT_LABELS = {
     "credit_analyst": "Credit Analyst",
     "income_verifier": "Income Verifier",
     "risk_assessor": "Risk Assessor",
     "fraud_detector": "Fraud Detector",
+    "employment_verifier": "Employment Verifier",
     "debt_analyzer": "Debt Analyzer",
 }
 

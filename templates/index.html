@@ -1537,7 +1537,7 @@
       /* Parallel agents */
       const parallelEl = document.getElementById('parallelAgents');
       parallelEl.innerHTML = '';
-      ['credit_analyst','income_verifier','risk_assessor','fraud_detector'].forEach(k => {
+      ['credit_analyst','income_verifier','risk_assessor','fraud_detector','employment_verifier'].forEach(k => {
         if (res[k]) parallelEl.innerHTML += buildAgentCard(res[k]);
       });
 

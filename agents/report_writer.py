@@ -2,7 +2,14 @@ from agents.base_agent import call_llm
 
 SYSTEM = "Senior loan officer. Write concise formal assessment reports. Banking language."
 
-AGENT_KEYS = ["credit_analyst", "income_verifier", "risk_assessor", "fraud_detector", "debt_analyzer"]
+AGENT_KEYS = [
+    "credit_analyst",
+    "income_verifier",
+    "risk_assessor",
+    "fraud_detector",
+    "employment_verifier",
+    "debt_analyzer",
+]
 
 
 def _threshold_status(data: dict) -> str:
@@ -56,5 +63,5 @@ Reason: {critic.get('reason','')}
 Write five sections: EXECUTIVE SUMMARY, FINANCIAL PROFILE, AGENT FINDINGS, DECISION RATIONALE, CONDITIONS.
 One paragraph each. Cite specific Fannie Mae threshold values throughout."""
 
-    report_text = call_llm(SYSTEM, prompt, max_tokens=600)
+    report_text = call_llm(SYSTEM, prompt, max_tokens=600, json_mode=False)
     return {"agent": "Report Writer", "report": report_text}

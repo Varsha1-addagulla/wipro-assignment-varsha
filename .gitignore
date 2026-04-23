@@ -1,4 +1,6 @@
 .env
+.env.*
+!.env.example
 .claude/
 __pycache__/
 *.py[cod]
@@ -8,9 +10,11 @@ venv/
 dist/
 build/
 *.log
-.env
-.env.txt
-.env.txt
-.env
-".env.txt" 
-".env" 
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.sqlite
+*.db

@@ -1,28 +1,25 @@
-# Cloud Build → Artifact Registry → Cloud Run
+# Cloud Build -> Artifact Registry -> Cloud Run
 #
-# GCP project (this repo / trigger target):
+# GCP project:
 #   Name:   My First Project
 #   Number: 278595266473
 #   ID:     project-c578a9e8-e300-4241-b6d
 #
-# IAM (run once in Cloud Shell if builds show "Logs Writer" errors):
-#   gcloud projects add-iam-policy-binding project-c578a9e8-e300-4241-b6d \
-#     --member="serviceAccount:278595266473-compute@developer.gserviceaccount.com" \
-#     --role="roles/logging.logWriter"
+# Required one-time IAM on the build service account (278595266473-compute@...):
+#   roles/logging.logWriter
+#   roles/iam.serviceAccountUser (on itself)
+#   roles/run.admin
+#   roles/artifactregistry.writer
+#   roles/secretmanager.secretAccessor (for GROQ_API_KEY)
 #
-# Build identity: serviceAccount must be a literal resource name (no $_ vars in this field).
-# Trigger: set "Service account" to 278595266473-compute@developer.gserviceaccount.com
-#
-# Deploy omits --service-account so Cloud Run uses the default runtime identity
-# (Compute Engine default SA in this project).
+# Build identity must stay as a literal resource name — Cloud Build does not
+# expand user-defined substitutions ($_...) in this field.
 
 substitutions:
   _GCP_PROJECT_ID: project-c578a9e8-e300-4241-b6d
   _REGION: us-central1
   _AR_REPOSITORY: app
   _SERVICE_NAME: loan-risk-multiagent
-  # Secret Manager secret ID that stores the Groq API key.
-  # Override via trigger substitutions if the secret is named differently.
   _GROQ_SECRET_NAME: GROQ_API_KEY
 
 serviceAccount: projects/project-c578a9e8-e300-4241-b6d/serviceAccounts/278595266473-compute@developer.gserviceaccount.com
@@ -31,7 +28,20 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  - name: gcr.io/cloud-builders/docker
+  - id: install-and-test
+    name: python:3.11.10-slim
+    entrypoint: bash
+    args:
+      - -lc
+      - |
+        set -euo pipefail
+        pip install --no-cache-dir -r requirements-dev.txt
+        ruff check .
+        pytest -q
+
+  - id: docker-build
+    name: gcr.io/cloud-builders/docker
+    waitFor: ["install-and-test"]
     args:
       - build
       - -t
@@ -40,18 +50,24 @@ steps:
       - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest
       - .
 
-  - name: gcr.io/cloud-builders/docker
+  - id: docker-push-sha
+    name: gcr.io/cloud-builders/docker
+    waitFor: ["docker-build"]
     args:
       - push
       - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
 
-  - name: gcr.io/cloud-builders/docker
+  - id: docker-push-latest
+    name: gcr.io/cloud-builders/docker
+    waitFor: ["docker-build"]
     args:
       - push
       - $_REGION-docker.pkg.dev/$_GCP_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest
 
-  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
+    waitFor: ["docker-push-sha"]
     args:
       - run
       - deploy
@@ -81,6 +97,8 @@ steps:
       - --allow-unauthenticated
       - --set-secrets
       - GROQ_API_KEY=$_GROQ_SECRET_NAME:latest
+      - --set-env-vars
+      - LOG_LEVEL=INFO,ENVIRONMENT=production
       - --quiet
       - --verbosity=info
 

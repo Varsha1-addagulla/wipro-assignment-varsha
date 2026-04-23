@@ -11,3 +11,13 @@ venv
 *.log
 .claude
 README.md
+tests/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+pyproject.toml
+requirements-dev.txt
+cloudbuild.yaml
