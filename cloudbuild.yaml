@@ -1,0 +1,63 @@
+# Cloud Build → Artifact Registry → Cloud Run.
+#
+# Build identity: serviceAccount must be a literal resource name (no $_ vars here).
+# Trigger: set "Service account" to the same SA in the UI, or rely on this field.
+# Trigger: set "Directory" to wipro if the repo root is above this folder.
+#
+# Cloud Run revision identity: --service-account uses _COMPUTE_SA_EMAIL (same default compute SA).
+
+substitutions:
+  _REGION: us-central1
+  _AR_REPOSITORY: app
+  _SERVICE_NAME: loan-risk-multiagent
+  _COMPUTE_SA_EMAIL: 278595266473-compute@developer.gserviceaccount.com
+
+# All steps run as this principal (push images, deploy Cloud Run).
+serviceAccount: projects/$PROJECT_ID/serviceAccounts/278595266473-compute@developer.gserviceaccount.com
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
+      - -t
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - $_SERVICE_NAME
+      - --image
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
+      - --region
+      - $_REGION
+      - --platform
+      - managed
+      - --service-account
+      - $_COMPUTE_SA_EMAIL
+      - --min-instances
+      - "1"
+      - --max-instances
+      - "10"
+      - --allow-unauthenticated
+
+images:
+  - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA
+  - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:latest

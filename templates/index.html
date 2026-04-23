@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PrimaryLending — Intelligent Risk Assessment for Modern Lending</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:       #1a3a5c;
+      --primary-mid:   #234d78;
+      --primary-light: #2d6099;
+      --accent:        #0ea5e9;
+      --green:         #10b981;
+      --green-bg:      #ecfdf5;
+      --green-border:  #a7f3d0;
+      --green-text:    #065f46;
+      --amber:         #f59e0b;
+      --amber-bg:      #fffbeb;
+      --amber-border:  #fde68a;
+      --amber-text:    #78350f;
+      --red:           #ef4444;
+      --red-bg:        #fef2f2;
+      --red-border:    #fecaca;
+      --red-text:      #7f1d1d;
+      --bg:            #f1f5f9;
+      --surface:       #ffffff;
+      --border:        #e2e8f0;
+      --border-mid:    #cbd5e1;
+      --text:          #0f172a;
+      --text-mid:      #334155;
+      --muted:         #64748b;
+      --muted-light:   #94a3b8;
+      --radius:        12px;
+      --radius-sm:     8px;
+      --shadow-sm:     0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --shadow:        0 4px 16px rgba(0,0,0,.07), 0 1px 4px rgba(0,0,0,.04);
+      --shadow-lg:     0 10px 40px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.05);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      background: var(--primary);
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    }
+
+    .header-inner {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      text-decoration: none;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #0ea5e9, #2d6099);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .brand-logo svg { width: 20px; height: 20px; }
+
+    .brand-name {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.3px;
+    }
+
+    .brand-name {
+      letter-spacing: -.4px;
+    }
+
+    .header-badge {
+      font-size: .68rem;
+      font-weight: 600;
+      padding: .25rem .7rem;
+      border-radius: 20px;
+      background: rgba(255,255,255,.12);
+      color: rgba(255,255,255,.8);
+      border: 1px solid rgba(255,255,255,.15);
+      letter-spacing: .3px;
+    }
+
+    @media (max-width: 520px) {
+      header { padding: 0 1rem; }
+      .header-badge { display: none; }
+    }
+
+    /* ─── LOAN TYPE TABS ─── */
+    .tabs-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tabs-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      gap: .1rem;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .875rem 1.1rem;
+      font-size: .82rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      cursor: default;
+      transition: color .15s;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tab-soon {
+      font-size: .6rem;
+      font-weight: 600;
+      padding: .1rem .4rem;
+      background: #f1f5f9;
+      border: 1px solid var(--border-mid);
+      border-radius: 4px;
+      color: var(--muted-light);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+
+    @media (max-width: 520px) {
+      .tabs-inner { padding: 0 1rem; }
+      .tab-btn { padding: .75rem .75rem; font-size: .78rem; }
+    }
+
+    /* ─── PAGE LAYOUT ─── */
+    .page {
+      max-width: 1180px;
+      margin: 2rem auto;
+      padding: 0 2rem 4rem;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .page { padding: 0 1rem 3rem; margin-top: 1.25rem; gap: 1rem; }
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      position: sticky;
+      top: 112px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { position: static; }
+    }
+
+    /* ─── CARD ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ─── FORM CARD ─── */
+    .form-card {
+      padding: 1.75rem;
+    }
+
+    .form-card-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: .25rem;
+    }
+
+    .form-card-sub {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.25rem 0;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .85rem;
+    }
+
+    @media (max-width: 480px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .field { margin-bottom: .85rem; }
+    .field:last-of-type { margin-bottom: 0; }
+
+    .field label {
+      display: block;
+      font-size: .7rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: .35rem;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-prefix {
+      position: absolute;
+      left: .85rem;
+      font-size: .85rem;
+      color: var(--muted);
+      font-weight: 500;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .field input {
+      width: 100%;
+      padding: .65rem .85rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: .9rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      background: #fafbfc;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+      outline: none;
+    }
+
+    .field input.has-prefix { padding-left: 2rem; }
+
+    .field input:focus {
+      border-color: var(--primary-light);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(26,58,92,.1);
+    }
+
+    .field input::placeholder { color: var(--muted-light); }
+
+    .btn-primary {
+      width: 100%;
+      padding: .875rem 1rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: .9rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      letter-spacing: .2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      margin-top: 1.25rem;
+      transition: background .15s, box-shadow .15s, transform .1s;
+      box-shadow: 0 4px 14px rgba(26,58,92,.3);
+    }
+
+    .btn-primary:hover { background: var(--primary-mid); box-shadow: 0 6px 20px rgba(26,58,92,.4); }
+    .btn-primary:active { transform: scale(.99); }
+    .btn-primary:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; transform: none; }
+
+    /* ─── INFO CARD ─── */
+    .info-card {
+      padding: 1.1rem 1.25rem;
+    }
+
+    .info-card-title {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--muted);
+      margin-bottom: .85rem;
+    }
+
+    .step-list { display: flex; flex-direction: column; gap: 0; }
+
+    .step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: .75rem;
+      padding: .55rem 0;
+      position: relative;
+    }
+
+    .step-row:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 13px;
+      top: 32px;
+      width: 1px;
+      height: calc(100% - 16px);
+      background: var(--border);
+    }
+
+    .step-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: 1.5px solid var(--border-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .65rem;
+      font-weight: 700;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .step-info strong {
+      display: block;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--text-mid);
+    }
+
+    .step-info span {
+      font-size: .7rem;
+      color: var(--muted-light);
+    }
+
+    /* ─── MAIN AREA ─── */
+    main {
+      min-width: 0;
+      background: var(--primary);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Labels and dividers on dark bg */
+    .section-label {
+      color: rgba(255,255,255,.45);
+    }
+    .section-label::after {
+      background: rgba(255,255,255,.12);
+    }
+
+    .disclaimer {
+      color: rgba(255,255,255,.35);
+    }
+
+    .security-row .security-label {
+      color: rgba(255,255,255,.35);
+    }
+
+    .sec-badge {
+      background: rgba(255,255,255,.07);
+      border-color: rgba(255,255,255,.15);
+      color: rgba(255,255,255,.65);
+    }
+
+    .sec-badge-dot {
+      background: var(--green);
+    }
+
+    /* ─── WELCOME STATE ─── */
+    .welcome-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 2rem;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: var(--radius);
+    }
+
+    .welcome-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .welcome-state h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: rgba(255,255,255,.9);
+      margin-bottom: .5rem;
+    }
+
+    .welcome-state p {
+      font-size: .83rem;
+      color: rgba(255,255,255,.5);
+      max-width: 360px;
+      line-height: 1.65;
+    }
+
+    /* ─── ERROR BOX ─── */
+    .error-box {
+      display: none;
+      background: var(--red-bg);
+      border: 1px solid var(--red-border);
+      border-left: 3px solid var(--red);
+      border-radius: var(--radius-sm);
+      padding: .875rem 1.1rem;
+      color: var(--red-text);
+      font-size: .85rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    /* ─── LOADING ─── */
+    #loading {
+      display: none;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: var(--radius);
+      padding: 3rem 2rem 2.5rem;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 52px;
+      height: 52px;
+      border: 3px solid rgba(255,255,255,.15);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-title {
+      font-size: .97rem;
+      font-weight: 700;
+      color: rgba(255,255,255,.9);
+      margin-bottom: .35rem;
+    }
+
+    .loading-sub {
+      font-size: .78rem;
+      color: rgba(255,255,255,.5);
+      margin-bottom: 2rem;
+    }
+
+    /* Horizontal step progress */
+    .progress-steps {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .lstep {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .4rem;
+      position: relative;
+    }
+
+    .lstep:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 13px;
+      left: calc(50% + 13px);
+      right: calc(-50% + 13px);
+      height: 2px;
+      background: rgba(255,255,255,.12);
+      transition: background .4s;
+    }
+
+    .lstep.done:not(:last-child)::after { background: var(--green); }
+
+    .lstep-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .65rem;
+      font-weight: 700;
+      color: rgba(255,255,255,.4);
+      transition: all .3s;
+      z-index: 1;
+    }
+
+    .lstep.active .lstep-circle {
+      border-color: rgba(255,255,255,.8);
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      animation: pulsering 1.2s ease-in-out infinite;
+    }
+
+    .lstep.done .lstep-circle {
+      border-color: var(--green);
+      background: var(--green);
+      color: #fff;
+    }
+
+    @keyframes pulsering {
+      0%,100% { box-shadow: 0 0 0 0 rgba(26,58,92,.3); }
+      50%      { box-shadow: 0 0 0 6px rgba(26,58,92,.0); }
+    }
+
+    .lstep-label {
+      font-size: .62rem;
+      font-weight: 500;
+      color: rgba(255,255,255,.35);
+      text-align: center;
+      line-height: 1.3;
+      transition: color .3s;
+    }
+
+    .lstep.active .lstep-label { color: rgba(255,255,255,.9); font-weight: 600; }
+    .lstep.done  .lstep-label  { color: var(--green); }
+
+    @media (max-width: 520px) {
+      .lstep-label { display: none; }
+    }
+
+    /* ─── RESULTS ─── */
+    #results { display: none; }
+
+    /* ─── DECISION BANNER ─── */
+    .decision-banner {
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .decision-banner-inner {
+      padding: 1.75rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .decision-banner.APPROVED      .decision-banner-inner { background: linear-gradient(135deg, var(--green-bg), #d1fae5); border-left: 4px solid var(--green); }
+    .decision-banner.HUMAN_REVIEW  .decision-banner-inner { background: linear-gradient(135deg, var(--amber-bg), #fef3c7); border-left: 4px solid var(--amber); }
+    .decision-banner.AUTO_REJECTED .decision-banner-inner { background: linear-gradient(135deg, var(--red-bg), #fee2e2);   border-left: 4px solid var(--red); }
+
+    .decision-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .APPROVED      .decision-icon { background: #d1fae5; }
+    .HUMAN_REVIEW  .decision-icon { background: #fde68a; }
+    .AUTO_REJECTED .decision-icon { background: #fecaca; }
+
+    .decision-text h2 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -.2px;
+    }
+
+    .APPROVED      .decision-text h2 { color: var(--green-text); }
+    .HUMAN_REVIEW  .decision-text h2 { color: var(--amber-text); }
+    .AUTO_REJECTED .decision-text h2 { color: var(--red-text); }
+
+    .decision-text p {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: .3rem;
+      line-height: 1.55;
+    }
+
+    .decision-avg {
+      margin-left: auto;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .decision-avg-num {
+      font-size: 2rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .APPROVED      .decision-avg-num { color: var(--green-text); }
+    .HUMAN_REVIEW  .decision-avg-num { color: var(--amber-text); }
+    .AUTO_REJECTED .decision-avg-num { color: var(--red-text); }
+
+    .decision-avg-label {
+      font-size: .62rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      margin-top: .1rem;
+    }
+
+    /* ─── SECTION LABEL ─── */
+    .section-label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--muted);
+      margin: 1.75rem 0 .85rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─── DATA VALIDATION ROW ─── */
+    .validation-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: .875rem 1.1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      /* override: JS sets inline border/bg color on this element; reset to neutral here */
+    }
+
+    .validation-left {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+    }
+
+    .validation-status-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      flex-shrink: 0;
+    }
+
+    .validation-info strong {
+      display: block;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .validation-info span {
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    .validation-score {
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .v-flags {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+      padding-top: .65rem;
+      border-top: 1px solid var(--border);
+      margin-top: .65rem;
+    }
+
+    .flag-pill {
+      display: flex;
+      align-items: flex-start;
+      gap: .5rem;
+      font-size: .75rem;
+      line-height: 1.5;
+      padding: .4rem .65rem;
+      border-radius: 6px;
+    }
+
+    .flag-pill.CRITICAL { background: var(--red-bg);   color: var(--red-text);   border: 1px solid var(--red-border); }
+    .flag-pill.HIGH     { background: #fff7ed;          color: #9a3412;           border: 1px solid #fed7aa; }
+    .flag-pill.MEDIUM   { background: var(--amber-bg);  color: var(--amber-text); border: 1px solid var(--amber-border); }
+    .flag-pill.LOW      { background: #f0f9ff;          color: #0c4a6e;           border: 1px solid #bae6fd; }
+
+    .sev-tag {
+      font-size: .58rem;
+      font-weight: 800;
+      padding: .1rem .35rem;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      flex-shrink: 0;
+      margin-top: .1rem;
+    }
+
+    .sev-CRITICAL { background: var(--red);   color: #fff; }
+    .sev-HIGH     { background: #f97316;      color: #fff; }
+    .sev-MEDIUM   { background: var(--amber); color: #fff; }
+    .sev-LOW      { background: #0ea5e9;      color: #fff; }
+
+    /* ─── AGENT GRID ─── */
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: .875rem;
+    }
+
+    @media (max-width: 520px) {
+      .agent-grid { grid-template-columns: 1fr; }
+    }
+
+    .agent-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .15s, transform .15s;
+    }
+
+    .agent-card:hover {
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
+    }
+
+    .agent-card-top {
+      padding: .875rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    .agent-name-row {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+    }
+
+    .agent-icon-wrap {
+      width: 30px; height: 30px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .6rem;
+      font-weight: 800;
+      letter-spacing: .5px;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .agent-icon-wrap { background: #e9eef4; }
+
+    .agent-name {
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .rec-badge {
+      font-size: .62rem;
+      font-weight: 700;
+      padding: .2rem .55rem;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .badge-approve { background: #d1fae5; color: var(--green-text);  border: 1px solid var(--green-border); }
+    .badge-review  { background: #fef3c7; color: var(--amber-text);  border: 1px solid var(--amber-border); }
+    .badge-reject  { background: #fee2e2; color: var(--red-text);    border: 1px solid var(--red-border); }
+
+    .agent-card-body { padding: .875rem 1rem; }
+
+    .conf-meter {
+      margin-bottom: .75rem;
+    }
+
+    .conf-meter-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .35rem;
+    }
+
+    .conf-label-text {
+      font-size: .67rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+    }
+
+    .conf-pct {
+      font-size: .8rem;
+      font-weight: 800;
+    }
+
+    .conf-track {
+      height: 6px;
+      background: #f1f5f9;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .conf-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width .8s cubic-bezier(.4,0,.2,1);
+    }
+
+    .agent-analysis {
+      font-size: .78rem;
+      color: var(--text-mid);
+      line-height: 1.65;
+      margin-bottom: .7rem;
+    }
+
+    .factors {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .3rem;
+    }
+
+    .factor-tag {
+      font-size: .65rem;
+      padding: .18rem .5rem;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--muted);
+    }
+
+    /* ─── CONFIDENCE OVERVIEW ─── */
+    .conf-overview {
+      background: var(--primary);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .conf-overview-title {
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: rgba(255,255,255,.55);
+      margin-bottom: 1rem;
+    }
+
+    .conf-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: .6rem;
+    }
+
+    .conf-tile {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+      padding: .65rem .75rem;
+      text-align: center;
+    }
+
+    .conf-tile-name {
+      font-size: .62rem;
+      font-weight: 500;
+      color: rgba(255,255,255,.55);
+      margin-bottom: .3rem;
+      line-height: 1.3;
+    }
+
+    .conf-tile-val {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .conf-tile.avg-tile {
+      grid-column: 1 / -1;
+      background: rgba(255,255,255,.13);
+      border-color: rgba(255,255,255,.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-align: left;
+    }
+
+    .conf-tile.avg-tile .conf-tile-name { margin-bottom: 0; }
+    .conf-tile.avg-tile .conf-tile-val  { font-size: 1.5rem; }
+
+    .threshold-note {
+      font-size: .65rem;
+      color: rgba(255,255,255,.4);
+      text-align: center;
+      margin-top: .85rem;
+    }
+
+    /* ─── REPORT CARD ─── */
+    .report-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .report-top {
+      padding: 1rem 1.5rem;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .report-top-icon {
+      width: 34px; height: 34px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      flex-shrink: 0;
+    }
+
+    .report-top h3 {
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .report-top p {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .report-body {
+      padding: 1.5rem;
+      font-size: .85rem;
+      line-height: 1.85;
+      color: var(--text-mid);
+      white-space: pre-wrap;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* ─── SECURITY BADGES ─── */
+    .security-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      align-items: center;
+      padding: 1rem 0 .5rem;
+    }
+
+    .security-label {
+      font-size: .68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--muted-light);
+      margin-right: .25rem;
+    }
+
+    .sec-badge {
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+      font-size: .68rem;
+      font-weight: 600;
+      padding: .25rem .65rem;
+      background: #f0fdf4;
+      border: 1px solid var(--green-border);
+      border-radius: 20px;
+      color: #166534;
+    }
+
+    .sec-badge-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+    }
+
+    /* ─── DISCLAIMER ─── */
+    .disclaimer {
+      font-size: .72rem;
+      color: var(--muted-light);
+      text-align: center;
+      padding: .75rem 0 0;
+      line-height: 1.6;
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 9999px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a class="brand" href="#">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L3 7v6c0 5 4 9 9 10 5-1 9-5 9-10V7L12 2z"/>
+          <path d="M9 12l2 2 4-4" stroke="#fff" stroke-width="2"/>
+        </svg>
+      </div>
+      <span class="brand-name">PrimaryLending</span>
+    </a>
+    <span class="header-badge">Intelligent Risk Assessment for Modern Lending</span>
+  </div>
+</header>
+
+<!-- LOAN TYPE TABS -->
+<div class="tabs-bar">
+  <div class="tabs-inner">
+    <button class="tab-btn active">Personal Loan</button>
+    <button class="tab-btn" disabled>Auto Loan <span class="tab-soon">Soon</span></button>
+    <button class="tab-btn" disabled>Mortgage <span class="tab-soon">Soon</span></button>
+  </div>
+</div>
+
+<!-- PAGE -->
+<div class="page">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- Application Form -->
+    <div class="card form-card">
+      <div class="form-card-title">Loan Application</div>
+      <div class="form-card-sub">Enter applicant details below to run the AI assessment.</div>
+
+      <form id="loanForm">
+        <div class="field">
+          <label>Full Name</label>
+          <div class="input-wrap">
+            <input type="text" name="name" placeholder="e.g. Jane Doe" required />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>Loan Amount</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" name="loan_amount" class="has-prefix" placeholder="25,000" min="1" step="any" required />
+            </div>
+          </div>
+          <div class="field">
+            <label>Annual Income</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" name="annual_income" class="has-prefix" placeholder="65,000" min="1" step="any" required />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>Credit Score</label>
+            <div class="input-wrap">
+              <input type="number" name="credit_score" placeholder="720" min="300" max="850" required />
+            </div>
+          </div>
+          <div class="field">
+            <label>Employment (years)</label>
+            <div class="input-wrap">
+              <input type="number" name="employment_years" placeholder="2.3" min="0" step="0.1" required />
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Existing Debt</label>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" name="existing_debt" class="has-prefix" placeholder="8,000" min="0" step="any" required />
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="submitBtn">
+          <span id="btnIcon">→</span>
+          <span id="btnText">Run Assessment</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Agent pipeline info -->
+    <div class="card info-card">
+      <div class="info-card-title">How it works</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-dot">1</div>
+          <div class="step-info">
+            <strong>Data Validation</strong>
+            <span>Checks for inconsistencies before analysis</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-dot">2</div>
+          <div class="step-info">
+            <strong>Parallel Review</strong>
+            <span>Credit, income, risk &amp; fraud — simultaneously</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-dot">3</div>
+          <div class="step-info">
+            <strong>Debt Analysis</strong>
+            <span>Synthesizes all findings into a debt profile</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-dot">4</div>
+          <div class="step-info">
+            <strong>Decision Engine</strong>
+            <span>Rules-based verdict against Fannie Mae thresholds</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-dot">5</div>
+          <div class="step-info">
+            <strong>Assessment Report</strong>
+            <span>Formal report with full reasoning and conditions</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <!-- Loading -->
+    <div id="loading">
+      <div class="spinner"></div>
+      <div class="loading-title">Analysing Application</div>
+      <div class="loading-sub">7 AI agents are evaluating this loan in real time</div>
+
+      <div class="progress-steps">
+        <div class="lstep" id="lstep0">
+          <div class="lstep-circle">✓</div>
+          <div class="lstep-label">Validate</div>
+        </div>
+        <div class="lstep" id="lstep1">
+          <div class="lstep-circle">2</div>
+          <div class="lstep-label">Credit &amp; Income</div>
+        </div>
+        <div class="lstep" id="lstep2">
+          <div class="lstep-circle">3</div>
+          <div class="lstep-label">Risk &amp; Fraud</div>
+        </div>
+        <div class="lstep" id="lstep3">
+          <div class="lstep-circle">4</div>
+          <div class="lstep-label">Debt Profile</div>
+        </div>
+        <div class="lstep" id="lstep4">
+          <div class="lstep-circle">5</div>
+          <div class="lstep-label">Final Report</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Welcome (default) -->
+    <div class="welcome-state" id="welcomeState">
+      <div class="welcome-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <h2>AI-Powered Loan Risk Assessment</h2>
+      <p>Complete the application form and our 7-agent AI pipeline will evaluate the applicant against Fannie Mae underwriting guidelines in seconds.</p>
+    </div>
+
+    <!-- Results -->
+    <div id="results">
+
+      <!-- Decision banner -->
+      <div id="criticCard" class="decision-banner"></div>
+
+      <!-- Data validation -->
+      <div id="consistencyResult"></div>
+
+      <!-- Parallel agents -->
+      <div class="section-label">Agent Analysis</div>
+      <div class="agent-grid" id="parallelAgents"></div>
+
+      <!-- Debt analyzer -->
+      <div class="section-label">Debt Profile</div>
+      <div id="debtAgent"></div>
+
+      <!-- Confidence overview -->
+      <div class="section-label">Confidence Scores</div>
+      <div id="confOverview"></div>
+
+      <!-- Report -->
+      <div class="section-label">Assessment Report</div>
+      <div class="report-card" id="reportCard"></div>
+
+      <!-- Security badges + disclaimer -->
+      <div class="security-row">
+        <span class="security-label">Security</span>
+        <span class="sec-badge"><span class="sec-badge-dot"></span>Input Validation</span>
+        <span class="sec-badge"><span class="sec-badge-dot"></span>Injection Protection</span>
+        <span class="sec-badge"><span class="sec-badge-dot"></span>No PII Stored</span>
+        <span class="sec-badge"><span class="sec-badge-dot"></span>Schema Enforced</span>
+        <span class="sec-badge"><span class="sec-badge-dot"></span>Audit Logged</span>
+      </div>
+      <p class="disclaimer">This is a preliminary AI assessment based on self-reported data. All figures require third-party verification before any credit decision is communicated to an applicant.</p>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  const form        = document.getElementById('loanForm');
+  const submitBtn   = document.getElementById('submitBtn');
+  const btnIcon     = document.getElementById('btnIcon');
+  const btnText     = document.getElementById('btnText');
+  const loading     = document.getElementById('loading');
+  const results     = document.getElementById('results');
+  const errorBox    = document.getElementById('errorBox');
+  const welcomeState= document.getElementById('welcomeState');
+
+  const AGENT_ICONS = {
+    'Credit Analyst':     'CA',
+    'Income Verifier':    'IV',
+    'Risk Assessor':      'RA',
+    'Fraud Detector':     'FD',
+    'Debt Analyzer':      'DA',
+    'Employment Verifier':'EV',
+  };
+
+  /* ── Helpers ── */
+  function confColor(v) {
+    if (v >= 75) return '#10b981';
+    if (v >= 50) return '#f59e0b';
+    return '#ef4444';
+  }
+
+  function recClass(rec) {
+    const r = (rec || '').toLowerCase();
+    if (r === 'approve') return 'approve';
+    if (r === 'review')  return 'review';
+    return 'reject';
+  }
+
+  function badgeClass(rec) {
+    const r = (rec || '').toLowerCase();
+    if (r === 'approve') return 'badge-approve';
+    if (r === 'review')  return 'badge-review';
+    return 'badge-reject';
+  }
+
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Build consistency row ── */
+  function buildConsistency(c) {
+    const status = c.status || 'FAIL';
+    const score  = c.consistency_score ?? 0;
+
+    const cfg = {
+      PASS:    { icon:'✓', label:'Data Validated',      scoreColor:'#10b981', bg:'#ecfdf5', border:'#a7f3d0' },
+      WARNING: { icon:'!', label:'Validation Warnings',  scoreColor:'#f59e0b', bg:'#fffbeb', border:'#fde68a' },
+      FAIL:    { icon:'✕', label:'Validation Failed',    scoreColor:'#ef4444', bg:'#fef2f2', border:'#fecaca' },
+    };
+    const { icon, label, scoreColor, bg, border } = cfg[status] || cfg.FAIL;
+
+    const SEVERITY_CLASS = { CRITICAL:'CRITICAL', HIGH:'HIGH', MEDIUM:'MEDIUM', LOW:'LOW' };
+
+    let flagsHtml = '';
+    if (c.flags && c.flags.length > 0) {
+      flagsHtml = `<div class="v-flags">` + (c.flags || []).map(f => {
+        const match = f.match(/^\[([A-Z]+)\]\s*(.*)/s);
+        const sev = match ? match[1] : 'MEDIUM';
+        const msg = match ? match[2] : f;
+        const cls = SEVERITY_CLASS[sev] || 'MEDIUM';
+        return `<div class="flag-pill ${cls}">
+          <span class="sev-tag sev-${cls}">${sev}</span>
+          <span>${esc(msg)}</span>
+        </div>`;
+      }).join('') + `</div>`;
+    }
+
+    return `
+      <div class="validation-row">
+        <div class="validation-left">
+          <div class="validation-status-icon" style="background:${scoreColor}20;color:${scoreColor};font-weight:800;font-size:.85rem;">${icon}</div>
+          <div class="validation-info">
+            <strong>${label}</strong>
+            <span>${esc(c.summary || '')}</span>
+          </div>
+        </div>
+        <div class="validation-score" style="color:${scoreColor}">${score}<span style="font-size:.7rem;font-weight:500;color:var(--muted)">/100</span></div>
+        ${flagsHtml}
+      </div>`;
+  }
+
+  /* ── Build agent card ── */
+  function buildAgentCard(r) {
+    const conf  = parseFloat(r.confidence || 0).toFixed(1);
+    const rec   = (r.recommendation || 'reject').toLowerCase();
+    const icon  = AGENT_ICONS[r.agent] || '🤖';
+    const color = confColor(parseFloat(conf));
+    const factors = (r.key_factors || [])
+      .map(f => `<span class="factor-tag">${esc(f)}</span>`).join('');
+
+    return `
+      <div class="agent-card ${recClass(rec)}">
+        <div class="agent-card-top">
+          <div class="agent-name-row">
+            <div class="agent-icon-wrap">${icon}</div>
+            <span class="agent-name">${esc(r.agent || 'Agent')}</span>
+          </div>
+          <span class="rec-badge ${badgeClass(rec)}">${esc(rec)}</span>
+        </div>
+        <div class="agent-card-body">
+          <div class="conf-meter">
+            <div class="conf-meter-header">
+              <span class="conf-label-text">Confidence</span>
+              <span class="conf-pct" style="color:${color}">${conf}%</span>
+            </div>
+            <div class="conf-track">
+              <div class="conf-fill" style="width:${conf}%;background:${color}"></div>
+            </div>
+          </div>
+          <div class="agent-analysis">${esc(r.analysis || '')}</div>
+          <div class="factors">${factors}</div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Build critic/decision banner ── */
+  function buildCritic(c) {
+    const dec = c.decision || 'AUTO_REJECTED';
+    const avg = parseFloat(c.average_confidence || 0).toFixed(1);
+    const cfg = {
+      APPROVED:      { icon:'✓', label:'Application Approved',         sub:'Meets all Fannie Mae underwriting thresholds.' },
+      HUMAN_REVIEW:  { icon:'⚡', label:'Flagged for Manual Review',    sub:'One or more factors require a loan officer review.' },
+      AUTO_REJECTED: { icon:'✕', label:'Application Not Approved',     sub:'Does not meet minimum underwriting requirements.' },
+    };
+    const { icon, label, sub } = cfg[dec] || cfg.AUTO_REJECTED;
+
+    // Confidence tiles
+    let tiles = `
+      <div class="conf-tile avg-tile">
+        <div class="conf-tile-name">Overall Confidence</div>
+        <div class="conf-tile-val">${avg}%</div>
+      </div>`;
+
+    for (const [lbl, val] of Object.entries(c.individual_confidences || {})) {
+      tiles += `<div class="conf-tile">
+        <div class="conf-tile-name">${esc(lbl)}</div>
+        <div class="conf-tile-val" style="color:${confColor(parseFloat(val))}">${val}%</div>
+      </div>`;
+    }
+
+    /* store critic html for confOverview */
+    document.getElementById('confOverview').innerHTML = `
+      <div class="conf-overview">
+        <div class="conf-overview-title">Agent Confidence Breakdown</div>
+        <div class="conf-tiles">${tiles}</div>
+        <div class="threshold-note">&lt;50% — Not Approved &nbsp;·&nbsp; 50–75% — Manual Review &nbsp;·&nbsp; &gt;75% — Approved</div>
+      </div>`;
+
+    return `
+      <div class="decision-banner-inner">
+        <div class="decision-icon">${icon}</div>
+        <div class="decision-text">
+          <h2>${label}</h2>
+          <p>${esc(c.reason || sub)}</p>
+        </div>
+        <div class="decision-avg">
+          <div class="decision-avg-num">${avg}%</div>
+          <div class="decision-avg-label">Confidence</div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Build report ── */
+  function buildReport(r) {
+    return `
+      <div class="report-top">
+        <div class="report-top-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div>
+          <h3>Formal Assessment Report</h3>
+          <p>Generated by PrimaryLending — for internal review only</p>
+        </div>
+      </div>
+      <div class="report-body">${esc(r.report || '')}</div>`;
+  }
+
+  /* ── Loading step animation ── */
+  const lstepIds    = ['lstep0','lstep1','lstep2','lstep3','lstep4'];
+  const lstepDelays = [0, 1500, 6000, 10000, 14000];
+
+  function startLoading() {
+    lstepIds.forEach(id => { document.getElementById(id).className = 'lstep'; });
+    document.getElementById('lstep0').className = 'lstep active';
+    lstepDelays.slice(1).forEach((delay, i) => {
+      setTimeout(() => {
+        if (loading.style.display === 'none') return;
+        document.getElementById(lstepIds[i]).className = 'lstep done';
+        document.getElementById(lstepIds[i + 1]).className = 'lstep active';
+      }, delay);
+    });
+  }
+
+  /* ── Form submit ── */
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    errorBox.style.display  = 'none';
+    results.style.display   = 'none';
+    welcomeState.style.display = 'none';
+    loading.style.display   = 'block';
+    submitBtn.disabled      = true;
+    btnIcon.textContent     = '…';
+    btnText.textContent     = 'Analysing';
+
+    startLoading();
+
+    try {
+      const resp = await fetch('/assess', { method: 'POST', body: new FormData(form) });
+      const res  = await resp.json();
+      if (res.error) throw new Error(res.error);
+
+      lstepIds.forEach(id => document.getElementById(id).className = 'lstep done');
+
+      /* Consistency */
+      document.getElementById('consistencyResult').innerHTML = res.consistency_checker
+        ? buildConsistency(res.consistency_checker) : '';
+
+      /* Parallel agents */
+      const parallelEl = document.getElementById('parallelAgents');
+      parallelEl.innerHTML = '';
+      ['credit_analyst','income_verifier','risk_assessor','fraud_detector'].forEach(k => {
+        if (res[k]) parallelEl.innerHTML += buildAgentCard(res[k]);
+      });
+
+      /* Debt analyzer */
+      document.getElementById('debtAgent').innerHTML = res.debt_analyzer
+        ? `<div class="agent-grid">${buildAgentCard(res.debt_analyzer)}</div>` : '';
+
+      /* Critic — also populates confOverview as side-effect */
+      const criticEl = document.getElementById('criticCard');
+      if (res.critic) {
+        criticEl.className = 'decision-banner ' + (res.critic.decision || 'AUTO_REJECTED');
+        criticEl.innerHTML = buildCritic(res.critic);
+      } else {
+        criticEl.innerHTML = '';
+      }
+
+      /* Report */
+      document.getElementById('reportCard').innerHTML = res.report
+        ? buildReport(res.report) : '';
+
+      loading.style.display = 'none';
+      results.style.display = 'block';
+      window.scrollTo({ top: document.getElementById('results').offsetTop - 80, behavior: 'smooth' });
+
+    } catch (err) {
+      loading.style.display   = 'none';
+      welcomeState.style.display = 'flex';
+      errorBox.style.display  = 'block';
+      errorBox.textContent    = err.message;
+    } finally {
+      submitBtn.disabled  = false;
+      btnIcon.textContent = '→';
+      btnText.textContent = 'Run Assessment';
+    }
+  });
+</script>
+</body>
+</html>
