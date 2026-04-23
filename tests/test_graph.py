@@ -65,6 +65,7 @@ def test_run_assessment_returns_all_keys(mocked_llm: None) -> None:
     result = run_assessment(_applicant())
 
     expected_keys = {
+        "planner",
         "consistency_checker",
         "credit_analyst",
         "income_verifier",
@@ -76,11 +77,44 @@ def test_run_assessment_returns_all_keys(mocked_llm: None) -> None:
         "report",
     }
     assert expected_keys.issubset(result.keys())
+    assert result["planner"]["strategy"] == "full_assessment"
     assert result["critic"]["decision"] in {
         "APPROVED",
         "HUMAN_REVIEW",
         "AUTO_REJECTED",
     }
+    assert "latency_ms" in result["credit_analyst"]
+
+
+def test_run_assessment_fast_reject_skips_analysts(mocked_llm: None) -> None:
+    """Fast-reject path skips every LLM analyst and returns quickly."""
+
+    from agents.graph import run_assessment
+
+    bad_applicant = {
+        "name": "Underwriting Adverse",
+        "loan_amount": 2_000_000.0,  # 20x income — planner fast-rejects
+        "annual_income": 100_000.0,
+        "credit_score": 720,
+        "employment_years": 5.0,
+        "existing_debt": 0.0,
+    }
+
+    result = run_assessment(bad_applicant)
+
+    assert result["planner"]["strategy"] == "fast_reject_expected"
+    # None of the LLM analysts were invoked, so their state slots are empty dicts.
+    for key in (
+        "credit_analyst",
+        "income_verifier",
+        "risk_assessor",
+        "fraud_detector",
+        "employment_verifier",
+        "debt_analyzer",
+    ):
+        assert result[key] == {}
+    # Critic still ran and produced an AUTO_REJECTED decision.
+    assert result["critic"]["decision"] == "AUTO_REJECTED"
 
 
 def test_assess_endpoint_happy_path(client, mocked_llm) -> None:  # type: ignore[no-untyped-def]
@@ -92,11 +126,15 @@ def test_assess_endpoint_happy_path(client, mocked_llm) -> None:  # type: ignore
     assert response.status_code == 200
     body = response.get_json()
     assert "critic" in body
+    assert "planner" in body
+    assert body["planner"]["strategy"] == "full_assessment"
     assert body["critic"]["decision"] in {
         "APPROVED",
         "HUMAN_REVIEW",
         "AUTO_REJECTED",
     }
+    assert body["meta"]["request_id"]
+    assert body["meta"]["total_latency_ms"] >= 0
 
 
 def test_assess_endpoint_rejects_invalid_payload(client) -> None:  # type: ignore[no-untyped-def]

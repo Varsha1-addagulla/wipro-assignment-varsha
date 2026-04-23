@@ -232,6 +232,12 @@ def create_app(settings: Settings | None = None) -> Flask:
             float(critic.get("average_confidence", 0.0)) if critic else None
         )
 
+        results["meta"] = {
+            "request_id": request_id,
+            "total_latency_ms": latency_ms,
+            "service": "loan-risk-multiagent",
+        }
+
         log.info(
             "assess_completed",
             decision=decision,

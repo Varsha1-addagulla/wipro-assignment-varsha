@@ -42,3 +42,18 @@ minversion = "8.0"
 addopts = "-q --strict-markers"
 testpaths = ["tests"]
 filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+branch = true
+source = ["agents", "app", "schemas", "security", "config", "db", "models", "logging_config"]
+omit = ["tests/*", ".venv*/*"]
+
+[tool.coverage.report]
+show_missing = true
+precision = 1
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == \"__main__\":",
+    "raise NotImplementedError",
+]

@@ -9,7 +9,20 @@ Thresholds:
 Hard overrides (checked first):
   consistency_score < 30      → AUTO_REJECTED (data integrity failure)
   fraud_detector confidence < 25 → AUTO_REJECTED
+
+Dissent tracking:
+  Every analyst recommends approve/review/reject independently. After the
+  deterministic decision is made the critic counts how many analysts
+  disagreed with it and, when the disagreement is material (≥ 2 of 6
+  analysts), exposes it as ``dissent_count`` + ``dissenting_agents`` so
+  the UI and the downstream auditor can flag split decisions.
 """
+
+_DECISION_TO_REC = {
+    "APPROVED": "approve",
+    "HUMAN_REVIEW": "review",
+    "AUTO_REJECTED": "reject",
+}
 
 AGENT_KEYS = [
     "credit_analyst",
@@ -87,6 +100,15 @@ def make_decision(results: dict) -> dict:
             f"threshold. Application approved for processing."
         )
 
+    expected_rec = _DECISION_TO_REC[decision]
+    dissenting_agents = [
+        AGENT_LABELS.get(k, k)
+        for k, rec in recommendations.items()
+        if rec != expected_rec
+    ]
+    dissent_count = len(dissenting_agents)
+    hard_stop_triggered = consistency_score < 30 or fraud_confidence < 25.0
+
     return {
         "agent": "Critic Decision Agent",
         "decision": decision,
@@ -98,5 +120,8 @@ def make_decision(results: dict) -> dict:
             AGENT_LABELS.get(k, k): v for k, v in recommendations.items()
         },
         "reject_count": reject_count,
+        "dissent_count": dissent_count,
+        "dissenting_agents": dissenting_agents,
+        "hard_stop_triggered": hard_stop_triggered,
         "reason": reason,
     }

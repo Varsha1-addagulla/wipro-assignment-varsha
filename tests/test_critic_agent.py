@@ -121,3 +121,44 @@ def test_empty_results_returns_auto_rejected() -> None:
 
     assert decision["decision"] == "AUTO_REJECTED"
     assert decision["average_confidence"] == 0.0
+
+
+def test_dissent_count_flags_split_decisions() -> None:
+    """Critic returns APPROVED but two analysts recommended 'reject'."""
+
+    results = _results(
+        {
+            "credit_analyst": 90,
+            "income_verifier": 88,
+            "risk_assessor": 20,   # rec = reject
+            "fraud_detector": 92,
+            "employment_verifier": 25,  # rec = reject
+            "debt_analyzer": 89,
+        }
+    )
+    # Force consistency + fraud high so no hard stop fires.
+    results["consistency_checker"] = {"consistency_score": 100, "flag_count": 0}
+    results["fraud_detector"]["confidence"] = 92
+
+    decision = make_decision(results)
+
+    assert decision["dissent_count"] >= 2
+    assert isinstance(decision["dissenting_agents"], list)
+
+
+def test_hard_stop_flag_set_on_consistency_fail() -> None:
+    decision = make_decision(
+        _results(
+            {
+                "credit_analyst": 95,
+                "income_verifier": 95,
+                "risk_assessor": 95,
+                "fraud_detector": 95,
+                "employment_verifier": 95,
+                "debt_analyzer": 95,
+            },
+            consistency_score=10,
+        )
+    )
+
+    assert decision["hard_stop_triggered"] is True

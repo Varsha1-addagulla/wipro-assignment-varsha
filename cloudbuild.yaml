@@ -37,7 +37,7 @@ steps:
         set -euo pipefail
         pip install --no-cache-dir -r requirements-dev.txt
         ruff check .
-        pytest -q
+        pytest -q --cov --cov-report=term-missing
 
   - id: docker-build
     name: gcr.io/cloud-builders/docker
