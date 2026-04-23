@@ -21,6 +21,9 @@ substitutions:
   _REGION: us-central1
   _AR_REPOSITORY: app
   _SERVICE_NAME: loan-risk-multiagent
+  # Secret Manager secret ID that stores the Groq API key.
+  # Override via trigger substitutions if the secret is named differently.
+  _GROQ_SECRET_NAME: GROQ_API_KEY
 
 serviceAccount: projects/project-c578a9e8-e300-4241-b6d/serviceAccounts/278595266473-compute@developer.gserviceaccount.com
 
@@ -76,6 +79,8 @@ steps:
       - --max-instances
       - "10"
       - --allow-unauthenticated
+      - --set-secrets
+      - GROQ_API_KEY=$_GROQ_SECRET_NAME:latest
       - --quiet
       - --verbosity=info
 
