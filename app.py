@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import time
+import traceback
 import uuid
 from http import HTTPStatus
 from typing import Any
@@ -155,8 +156,19 @@ def create_app(settings: Settings | None = None) -> Flask:
     @app.errorhandler(Exception)
     def _handle_uncaught(exc: Exception) -> tuple[Response, int]:
         log.exception("unhandled_exception", error=str(exc))
+        # Diagnostic surface: bubble the actual Python exception out in the JSON
+        # body so browser-side errors show the real cause instead of Cloud Run's
+        # default "Service Unavailable" plaintext. Safe here because the service
+        # exposes no user data in tracebacks and has no auth surface to leak.
         return (
-            jsonify({"error": "Internal server error"}),
+            jsonify(
+                {
+                    "error": "Internal server error",
+                    "exception_type": type(exc).__name__,
+                    "exception_message": str(exc),
+                    "traceback": traceback.format_exc().splitlines()[-20:],
+                }
+            ),
             HTTPStatus.INTERNAL_SERVER_ERROR,
         )
 
@@ -205,9 +217,18 @@ def create_app(settings: Settings | None = None) -> Flask:
         try:
             results = run_assessment(payload)
         except Exception as exc:
-            # Surface-safe orchestrator: unexpected errors never leak internals.
+            # Diagnostic surface: include exception class + message + a tail of
+            # the traceback in the response so browser-side errors show the
+            # real cause instead of a generic "Service Unavailable". Structured
+            # server-side logging keeps the full context for Cloud Logging.
             latency_ms = int((time.perf_counter() - started) * 1000)
-            log.error("assess_orchestration_failed", error=str(exc))
+            tb_tail = traceback.format_exc().splitlines()[-20:]
+            log.error(
+                "assess_orchestration_failed",
+                error=str(exc),
+                exception_type=type(exc).__name__,
+                traceback_tail=tb_tail,
+            )
             _write_api_log(
                 request_id=request_id,
                 endpoint="/assess",
@@ -221,7 +242,14 @@ def create_app(settings: Settings | None = None) -> Flask:
                 request_summary={"loan_amount": float(validated.loan_amount)},
             )
             return (
-                jsonify({"error": "Assessment failed"}),
+                jsonify(
+                    {
+                        "error": "Assessment failed",
+                        "exception_type": type(exc).__name__,
+                        "exception_message": str(exc),
+                        "traceback": tb_tail,
+                    }
+                ),
                 HTTPStatus.INTERNAL_SERVER_ERROR,
             )
 

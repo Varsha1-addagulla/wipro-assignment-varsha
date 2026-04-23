@@ -1867,8 +1867,22 @@
 
     try {
       const resp = await fetch('/assess', { method: 'POST', body: new FormData(form) });
-      const res  = await resp.json();
-      if (res.error) throw new Error(res.error);
+      let res;
+      try {
+        res = await resp.json();
+      } catch (_parseErr) {
+        // Non-JSON body (typically Cloud Run's plaintext 503). Surface the
+        // HTTP status + any body text so the operator can diagnose instead
+        // of staring at a JSON parse error.
+        const body = await resp.text().catch(() => '');
+        throw new Error(`HTTP ${resp.status} ${resp.statusText} — ${body.slice(0, 300)}`);
+      }
+      if (res.error) {
+        const detail = res.exception_type
+          ? `${res.error}: ${res.exception_type}: ${res.exception_message || ''}`
+          : (res.details ? `${res.error}: ${JSON.stringify(res.details)}` : res.error);
+        throw new Error(detail);
+      }
 
       lstepIds.forEach(id => document.getElementById(id).className = 'lstep done');
 
