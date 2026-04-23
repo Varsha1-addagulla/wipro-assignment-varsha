@@ -183,31 +183,53 @@ def report_node(state: AssessmentState) -> dict[str, Any]:
 
 # --- Graph -------------------------------------------------------------------
 
+# LangGraph treats TypedDict field names and node names as a single channel
+# namespace, so node identifiers must not collide with state keys. Nodes get
+# a ``_node`` suffix while the state keys (and therefore the /assess response
+# shape consumed by the frontend) stay unchanged.
+_NODE_CONSISTENCY = "consistency_node"
+_NODE_CREDIT = "credit_node"
+_NODE_INCOME = "income_node"
+_NODE_RISK = "risk_node"
+_NODE_FRAUD = "fraud_node"
+_NODE_EMPLOYMENT = "employment_node"
+_NODE_DEBT = "debt_node"
+_NODE_CRITIC = "critic_node"
+_NODE_REPORT = "report_node"
+
+_PARALLEL_NODE_NAMES: tuple[str, ...] = (
+    _NODE_CREDIT,
+    _NODE_INCOME,
+    _NODE_RISK,
+    _NODE_FRAUD,
+    _NODE_EMPLOYMENT,
+)
+
 
 def _build_graph() -> Any:
     graph = StateGraph(AssessmentState)
 
-    graph.add_node("consistency_checker", consistency_node)
-    graph.add_node("credit_analyst", credit_node)
-    graph.add_node("income_verifier", income_node)
-    graph.add_node("risk_assessor", risk_node)
-    graph.add_node("fraud_detector", fraud_node)
-    graph.add_node("employment_verifier", employment_node)
-    graph.add_node("debt_analyzer", debt_node)
-    graph.add_node("critic", critic_node)
-    graph.add_node("report", report_node)
+    graph.add_node(_NODE_CONSISTENCY, consistency_node)
+    graph.add_node(_NODE_CREDIT, credit_node)
+    graph.add_node(_NODE_INCOME, income_node)
+    graph.add_node(_NODE_RISK, risk_node)
+    graph.add_node(_NODE_FRAUD, fraud_node)
+    graph.add_node(_NODE_EMPLOYMENT, employment_node)
+    graph.add_node(_NODE_DEBT, debt_node)
+    graph.add_node(_NODE_CRITIC, critic_node)
+    graph.add_node(_NODE_REPORT, report_node)
 
-    graph.add_edge(START, "consistency_checker")
+    graph.add_edge(START, _NODE_CONSISTENCY)
 
-    for node in _PARALLEL_KEYS:
-        graph.add_edge("consistency_checker", node)
+    for name in _PARALLEL_NODE_NAMES:
+        graph.add_edge(_NODE_CONSISTENCY, name)
 
-    for node in _PARALLEL_KEYS:
-        graph.add_edge(node, "debt_analyzer")
+    for name in _PARALLEL_NODE_NAMES:
+        graph.add_edge(name, _NODE_DEBT)
 
-    graph.add_edge("debt_analyzer", "critic")
-    graph.add_edge("critic", "report")
-    graph.add_edge("report", END)
+    graph.add_edge(_NODE_DEBT, _NODE_CRITIC)
+    graph.add_edge(_NODE_CRITIC, _NODE_REPORT)
+    graph.add_edge(_NODE_REPORT, END)
 
     return graph.compile()
 
