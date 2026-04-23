@@ -21,7 +21,8 @@ out from ``consistency_checker`` and all converge on ``debt_analyzer``.
 
 from __future__ import annotations
 
-from typing import Any, Callable, TypedDict
+from collections.abc import Callable
+from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
@@ -70,7 +71,9 @@ def _safe(
 
     try:
         return fn(*args)
-    except Exception as exc:  # noqa: BLE001 -- orchestration-level safety net
+    except Exception as exc:
+        # Orchestration-level safety net: every agent failure must degrade
+        # gracefully so the critic still receives a complete result set.
         _LOG.warning("agent_failed", agent=agent_label, error=str(exc))
         return {
             "agent": agent_label,

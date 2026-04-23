@@ -100,7 +100,8 @@ def _write_api_log(
                     request_summary=request_summary,
                 )
             )
-    except Exception as exc:  # noqa: BLE001 -- audit log is best-effort
+    except Exception as exc:
+        # Audit log is best-effort: a DB outage must never break a response.
         get_logger(__name__).error(
             "api_log_write_failed",
             request_id=request_id,
@@ -203,7 +204,8 @@ def create_app(settings: Settings | None = None) -> Flask:
 
         try:
             results = run_assessment(payload)
-        except Exception as exc:  # noqa: BLE001 -- surface-safe orchestrator
+        except Exception as exc:
+            # Surface-safe orchestrator: unexpected errors never leak internals.
             latency_ms = int((time.perf_counter() - started) * 1000)
             log.error("assess_orchestration_failed", error=str(exc))
             _write_api_log(
