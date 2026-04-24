@@ -49,9 +49,10 @@ def mocked_llm(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _applicant() -> dict[str, Any]:
+    """Fits Critic capacity rules: loan/annual and (loan+debt)/annual each ≤ 1.0."""
     return {
         "name": "Jane Doe",
-        "loan_amount": 150_000.0,
+        "loan_amount": 80_000.0,
         "annual_income": 100_000.0,
         "credit_score": 740,
         "employment_years": 4.0,

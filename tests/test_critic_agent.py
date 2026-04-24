@@ -11,6 +11,17 @@ def _agent(confidence: float, recommendation: str = "approve") -> dict[str, Any]
     return {"confidence": confidence, "recommendation": recommendation}
 
 
+def _safe_applicant() -> dict[str, Any]:
+    return {
+        "name": "Test User",
+        "loan_amount": 50_000.0,
+        "annual_income": 100_000.0,
+        "credit_score": 720,
+        "employment_years": 5.0,
+        "existing_debt": 0.0,
+    }
+
+
 def _results(
     confidences: dict[str, float], consistency_score: int = 100
 ) -> dict[str, Any]:
@@ -37,7 +48,8 @@ def test_all_high_confidence_results_in_approved() -> None:
                 "employment_verifier": 90,
                 "debt_analyzer": 89,
             }
-        )
+        ),
+        _safe_applicant(),
     )
 
     assert decision["decision"] == "APPROVED"
@@ -123,27 +135,86 @@ def test_empty_results_returns_auto_rejected() -> None:
     assert decision["average_confidence"] == 0.0
 
 
-def test_dissent_count_flags_split_decisions() -> None:
-    """Critic returns APPROVED but two analysts recommended 'reject'."""
-
+def test_two_or_more_reject_recommendations_override_high_average() -> None:
     results = _results(
         {
             "credit_analyst": 90,
             "income_verifier": 88,
-            "risk_assessor": 20,   # rec = reject
+            "risk_assessor": 20,  # reject
             "fraud_detector": 92,
-            "employment_verifier": 25,  # rec = reject
+            "employment_verifier": 25,  # reject
             "debt_analyzer": 89,
         }
     )
-    # Force consistency + fraud high so no hard stop fires.
     results["consistency_checker"] = {"consistency_score": 100, "flag_count": 0}
     results["fraud_detector"]["confidence"] = 92
 
-    decision = make_decision(results)
+    decision = make_decision(results, _safe_applicant())
 
-    assert decision["dissent_count"] >= 2
+    assert decision["decision"] == "AUTO_REJECTED"
+    assert "SPECIALIST CONSENSUS" in decision["reason"]
+
+
+def test_dissent_count_still_listed() -> None:
+    """With consensus reject, decision is AUTO_REJECT; dissenting_agents is still populated."""
+    results = _results(
+        {
+            "credit_analyst": 90,
+            "income_verifier": 88,
+            "risk_assessor": 20,
+            "fraud_detector": 92,
+            "employment_verifier": 25,
+            "debt_analyzer": 89,
+        }
+    )
+    results["consistency_checker"] = {"consistency_score": 100, "flag_count": 0}
+    results["fraud_detector"]["confidence"] = 92
+
+    decision = make_decision(results, _safe_applicant())
+    assert decision["recommendation_rejections"] >= 2
     assert isinstance(decision["dissenting_agents"], list)
+
+
+def test_stated_income_debt_rejects_toxic_file_despite_model_scores() -> None:
+    """(loan+debt) / annual >> 1.0: bank-style capacity, not token confidence."""
+    results = _results(
+        {
+            "credit_analyst": 90,
+            "income_verifier": 90,
+            "risk_assessor": 90,
+            "fraud_detector": 90,
+            "employment_verifier": 90,
+            "debt_analyzer": 90,
+        }
+    )
+    toxic = {
+        "name": "High Burden",
+        "loan_amount": 75_000.0,
+        "annual_income": 25_000.0,
+        "credit_score": 650,
+        "employment_years": 2.0,
+        "existing_debt": 50_000.0,
+    }
+    decision = make_decision(results, toxic)
+    assert decision["decision"] == "AUTO_REJECTED"
+    assert "CAPACITY" in decision["reason"]
+
+
+def test_subprime_fico_pulled_to_human_for_high_band() -> None:
+    results = _results(
+        {
+            "credit_analyst": 90,
+            "income_verifier": 90,
+            "risk_assessor": 90,
+            "fraud_detector": 90,
+            "employment_verifier": 90,
+            "debt_analyzer": 90,
+        }
+    )
+    subprime = {**_safe_applicant(), "credit_score": 600}
+    decision = make_decision(results, subprime)
+    assert decision["decision"] == "HUMAN_REVIEW"
+    assert "FICO" in decision["reason"]
 
 
 def test_hard_stop_flag_set_on_consistency_fail() -> None:

@@ -257,7 +257,7 @@ def debt_node(state: AssessmentState) -> dict[str, Any]:
 
 def critic_node(state: AssessmentState) -> dict[str, Any]:
     results = {key: state.get(key, {}) for key in _CRITIC_STATE_KEYS}
-    return {"critic": make_decision(results)}
+    return {"critic": make_decision(results, state.get("applicant"))}
 
 
 def negotiator_node(state: AssessmentState) -> dict[str, Any]:
