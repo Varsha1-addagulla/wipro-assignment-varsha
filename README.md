@@ -1,12 +1,25 @@
 # wipro-assignment-varsha
 
-Multi-agent **loan risk assessment** service. A **LangGraph** orchestration runs specialized agents (intake, verification, risk, negotiation, and others) with **Groq** LLM calls. The API is a **Flask** app with Pydantic validation, rate limits, structured logging, and an **`api_log`** database table for request auditing and debugging.
+Multi-agent **loan risk assessment** service: a first-pass triage, **not** a production credit decision or full LOS. A **LangGraph** graph runs **Intake** (stub industry-style context) **→ Planner** (full vs fast-reject path) **→ Consistency** (data-integrity rules) **→** five **parallel** LLM specialists **→ Debt** synthesizer **→ Critic** (pure Python) **→ Negotiator** **→ Report**, with **Groq** for specialist and report steps. The API is **Flask**, **Pydantic**-validated, rate-limited, and writes every `/assess` to **`api_log`** (plus structured logs).
+
+## How the Critic decides (deterministic, no LLM)
+
+The final outcome is not “whatever the model feels.” For each run the graph passes **form fields** into `make_decision` along with agent outputs. Order of application:
+
+1. **Consistency** score below **30** → `AUTO_REJECTED`
+2. **Fraud** confidence below **25** → `AUTO_REJECTED`
+3. **Stated capacity** (gross annual income, no tax) — in `agents/critic_agent.py`: **loan ÷ annual_income** and **(loan + existing_debt) ÷ annual_income** must each be **1.0 or lower**; otherwise `AUTO_REJECTED`
+4. **Two or more** specialists with recommendation **reject** → `AUTO_REJECTED`
+5. **Average** of six confidences (Credit, Income, Risk, Fraud, Employment, Debt): under **50%** → reject; **50–75%** → `HUMAN_REVIEW`; above **75%** → would approve, except:
+6. If the band is **approve** but **FICO** is under **620** → `HUMAN_REVIEW` (no sub-620 auto-approve in this build)
+
+Tweak thresholds via `_MAX_LTI`, `_MAX_COMBINED_STRESS`, and `_MIN_FICO_FOR_AUTO_APPROVE` in `agents/critic_agent.py`. Intake tools are **stubs**; there is no live credit bureau or bank link.
 
 ## Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/` | Web UI (Jinja template) |
+| `GET` | `/` | Web UI (Jinja — PrimaryLending style landing + assessment) |
 | `POST` | `/assess` | Run the assessment graph on a JSON or form payload |
 | `GET` | `/healthz` | Liveness (Docker `HEALTHCHECK` and load balancers) |
 
@@ -80,8 +93,12 @@ If you fork or reuse this in another project, change the `substitutions` and `se
 ## Project layout (high level)
 
 - `app.py` — Flask routes and API logging
-- `agents/` — Graph nodes and LLM tools
+- `agents/graph.py` — LangGraph `StateGraph` and `run_assessment`
+- `agents/critic_agent.py` — Final decision rules and capacity checks
+- `agents/` — Other nodes (planner, intake, specialists, negotiator, report)
 - `config.py` — Pydantic settings
 - `db.py` / `models.py` — SQLAlchemy and `api_log` model
-- `schemas.py` — Request/response Pydantic models
+- `schemas.py` — Request payload validation
+- `templates/` — UI templates
 - `tests/` — Pytest suite
+- `scripts/update_loan_pptx.py` — Optional one-off PPTX text helper (local paths)
